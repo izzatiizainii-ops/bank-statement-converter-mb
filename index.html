@@ -384,12 +384,8 @@
                 <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">📊 Statement Summary</h3>
                 <div class="summary-grid">
                     <div class="summary-item">
-                        <h3>Total Transactions</h3>
-                        <div class="summary-value" id="totalTransactions">0</div>
-                    </div>
-                    <div class="summary-item">
                         <h3>Beginning Balance</h3>
-                        <div class="summary-value" id="beginBalance">116,320.41</div>
+                        <div class="summary-value" id="beginBalance">116,190.41</div>
                     </div>
                     <div class="summary-item">
                         <h3>Ending Balance</h3>
@@ -405,7 +401,7 @@
                     </div>
                     <div class="summary-item">
                         <h3>Net Change</h3>
-                        <div class="summary-value credit" id="netChange">+3189.00</div>
+                        <div class="summary-value credit" id="netChange">+3,189.00</div>
                     </div>
                 </div>
             </div>
@@ -710,7 +706,6 @@
         }
 
         function updateSummary(begin, end, credits, debits, net) {
-            document.getElementById('totalTransactions').textContent = currentTransactions.length;
             document.getElementById('beginBalance').textContent = begin;
             document.getElementById('endBalance').textContent = end;
             document.getElementById('totalCredits').textContent = credits;

@@ -3,334 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Statement Converter</title>
-    <meta name="description" content="Free online tool to convert bank statement PDFs to Excel format. Privacy-focused, client-side processing.">
+    <title>Bank Statement Parser - Maybank</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 20px;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
         
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
         
         .header h1 {
-            margin: 0;
             font-size: 2.5em;
-            font-weight: 300;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
         .header p {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
             font-size: 1.1em;
+            opacity: 0.9;
         }
         
-        .account-info {
-            background: #f8f9fa;
-            padding: 20px 30px;
-            border-bottom: 1px solid #e9ecef;
-            display: none;
-        }
-        
-        .account-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .account-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .account-item strong {
-            color: #2c3e50;
+        .content {
+            padding: 30px;
         }
         
         .upload-section {
-            padding: 20px 30px;
             background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .upload-area {
-            border: 2px dashed #3498db;
+            border: 2px dashed #dee2e6;
             border-radius: 10px;
             padding: 40px;
             text-align: center;
-            background: white;
+            margin-bottom: 30px;
             transition: all 0.3s ease;
-            cursor: pointer;
         }
         
-        .upload-area:hover {
-            border-color: #2980b9;
-            background: #f8f9ff;
+        .upload-section.dragover {
+            background: #e3f2fd;
+            border-color: #2196F3;
         }
         
-        .upload-area.dragover {
-            border-color: #27ae60;
-            background: #f0fff4;
-        }
-        
-        .upload-icon {
-            font-size: 3em;
-            color: #3498db;
-            margin-bottom: 15px;
-        }
-        
-        .upload-text {
-            font-size: 1.2em;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        
-        .upload-subtext {
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .processing {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: #3498db;
-        }
-        
-        .processing .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: none;
-        }
-        
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: none;
-        }
-        
-        .results-section {
-            padding: 20px 30px;
-            display: none;
-        }
-        
-        .summary {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
+        .upload-section h2 {
+            color: #495057;
             margin-bottom: 20px;
         }
         
-        .summary-grid {
+        #fileInput {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .process-btn {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(86, 171, 47, 0.4);
+        }
+        
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(86, 171, 47, 0.5);
+        }
+        
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .results-section.show {
+            display: block;
+        }
+        
+        .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
+            margin-bottom: 30px;
         }
         
-        .summary-item {
-            background: white;
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .summary-item h3 {
-            margin: 0 0 10px 0;
-            color: #2c3e50;
+        .summary-card h3 {
             font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 10px;
         }
         
-        .summary-value {
+        .summary-card .value {
             font-size: 1.8em;
             font-weight: bold;
-            color: #3498db;
-        }
-        
-        .credit { color: #27ae60; }
-        .debit { color: #e74c3c; }
-        
-        .controls {
-            padding: 20px 0;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-        }
-        
-        .btn-success:hover {
-            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
         }
         
         .table-container {
-            overflow-x: auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
         }
         
         th {
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-            color: white;
-            padding: 15px 12px;
+            padding: 15px;
             text-align: left;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 0.9em;
+            font-weight: 600;
+            font-size: 0.95em;
         }
         
         td {
-            padding: 12px;
-            border-bottom: 1px solid #f1f2f6;
-            transition: background-color 0.2s ease;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95em;
         }
         
-        tr:hover {
-            background-color: #f8f9fa;
+        tbody tr:hover {
+            background: #f8f9fa;
         }
         
         .amount {
-            text-align: right;
             font-weight: 600;
+            text-align: right;
+        }
+        
+        .amount.credit {
+            color: #28a745;
+        }
+        
+        .amount.debit {
+            color: #dc3545;
         }
         
         .balance {
+            font-weight: 600;
             text-align: right;
-            font-weight: bold;
-            color: #2c3e50;
+            color: #495057;
         }
         
-        .type-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 500;
-            text-transform: uppercase;
+        .description {
+            max-width: 400px;
+            line-height: 1.4;
         }
         
-        .type-credit {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .type-debit {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .type-balance {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .footer {
-            padding: 30px;
-            background: #2c3e50;
-            color: white;
+        .export-buttons {
+            margin-top: 30px;
             text-align: center;
         }
         
-        .privacy-note {
-            background: #e8f5e8;
-            border: 1px solid #4caf50;
+        .export-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(240, 147, 251, 0.5);
+        }
+        
+        .status-message {
             padding: 15px;
             border-radius: 8px;
             margin: 20px 0;
-            text-align: center;
+            display: none;
+        }
+        
+        .status-message.show {
+            display: block;
+        }
+        
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
         
         @media (max-width: 768px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
+            .header h1 {
+                font-size: 1.8em;
             }
             
-            .btn {
-                text-align: center;
+            .summary-cards {
+                grid-template-columns: 1fr;
             }
             
-            table {
-                font-size: 0.9em;
-            }
-            
-            th, td {
-                padding: 8px;
+            td {
+                font-size: 0.85em;
+                padding: 10px;
             }
         }
     </style>
@@ -338,644 +290,372 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏦 Bank Statement Converter</h1>
-            <p>Free, Privacy-Focused PDF to Excel Conversion Tool</p>
+            <h1>🏦 Maybank Statement Parser</h1>
+            <p>Upload your Maybank PDF statement to parse transactions</p>
         </div>
         
-        <div class="account-info" id="accountInfo">
-            <div class="account-grid">
-                <div class="account-item">
-                    <strong>Account Number:</strong> <span id="accountNumber">-</span>
-                </div>
-                <div class="account-item">
-                    <strong>Statement Date:</strong> <span id="statementDate">-</span>
-                </div>
-                <div class="account-item">
-                    <strong>Account Type:</strong> <span id="accountType">-</span>
-                </div>
-                <div class="account-item">
-                    <strong>Branch:</strong> <span id="branch">-</span>
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <h2>📄 Upload Bank Statement</h2>
+                <p style="margin-bottom: 20px; color: #6c757d;">
+                    Drag and drop your PDF file here or click to browse
+                </p>
+                <input type="file" id="fileInput" accept=".pdf" />
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose PDF File
+                </button>
+                
+                <div class="file-info" id="fileInfo">
+                    <strong>File loaded:</strong> <span id="fileName"></span>
                 </div>
             </div>
-        </div>
-        
-        <div class="upload-section">
-            <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">📄 Upload Your Bank Statement PDF</h3>
-            <div class="privacy-note">
-                <strong>🔒 Your Privacy is Protected:</strong> PDFs are processed entirely in your browser. No files are uploaded to any server.
+            
+            <div style="text-align: center;">
+                <button class="process-btn" id="processBtn" onclick="processStatement()" disabled>
+                    Process Statement
+                </button>
+                <button class="process-btn" id="processTextBtn" onclick="processFromText()" style="background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%);">
+                    Paste Text Instead
+                </button>
             </div>
-            <div class="upload-area" onclick="document.getElementById('pdfInput').click();" 
-                 ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">Click to upload or drag & drop PDF here</div>
-                <div class="upload-subtext">Supports most bank statement formats (PDF only)</div>
-                <input type="file" id="pdfInput" class="file-input" accept=".pdf" onchange="handleFileSelect(event)">
-            </div>
-            <div class="processing" id="processing">
-                <div class="spinner"></div>
-                <div>Processing PDF... Please wait</div>
-            </div>
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
-        </div>
-        
-        <div class="results-section" id="resultsSection">
-            <div class="summary">
-                <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">📊 Statement Summary</h3>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <h3>Beginning Balance</h3>
-                        <div class="summary-value" id="beginBalance">116,190.41</div>
+            
+            <div class="status-message" id="statusMessage"></div>
+            
+            <div class="results-section" id="resultsSection">
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h3>Total Transactions</h3>
+                        <div class="value" id="totalTransactions">0</div>
                     </div>
-                    <div class="summary-item">
-                        <h3>Ending Balance</h3>
-                        <div class="summary-value" id="endBalance">119,379.41</div>
-                    </div>
-                    <div class="summary-item">
+                    <div class="summary-card" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);">
                         <h3>Total Credits</h3>
-                        <div class="summary-value credit" id="totalCredits">12,940.00</div>
+                        <div class="value" id="totalCredits">RM 0.00</div>
                     </div>
-                    <div class="summary-item">
+                    <div class="summary-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                         <h3>Total Debits</h3>
-                        <div class="summary-value debit" id="totalDebits">9,751.00</div>
+                        <div class="value" id="totalDebits">RM 0.00</div>
                     </div>
-                    <div class="summary-item">
-                        <h3>Net Change</h3>
-                        <div class="summary-value credit" id="netChange">+3,189.00</div>
+                    <div class="summary-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <h3>Final Balance</h3>
+                        <div class="value" id="finalBalance">RM 0.00</div>
                     </div>
                 </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount (RM)</th>
+                                <th>Balance (RM)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportToCSV()">
+                        📊 Export to CSV
+                    </button>
+                    <button class="export-btn" onclick="exportToJSON()">
+                        📝 Export to JSON
+                    </button>
+                </div>
             </div>
-            
-            <div class="controls">
-                <button class="btn" onclick="downloadCSV()">📊 Download CSV</button>
-                <button class="btn btn-success" onclick="copyToClipboard()">📋 Copy for Excel</button>
-                <span style="color: #7f8c8d;">
-                    📈 Total Transactions: <strong id="transactionCount">0</strong>
-                </span>
-            </div>
-            
-            <div class="table-container">
-                <table id="transactionTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Amount (RM)</th>
-                            <th>Balance (RM)</th>
-                            <th>Type</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>💡 <strong>How it works:</strong> Upload your PDF → Get Excel-ready data → Download or copy to spreadsheet</p>
-            <p style="margin-top: 15px; opacity: 0.8; font-size: 0.9em;">
-                Built with privacy in mind. No data stored. No tracking. Open source.
-            </p>
         </div>
     </div>
-
+    
     <script>
-        let currentTransactions = [];
-
-        // PDF Processing Functions
-        function handleDragOver(e) {
+        let fileContent = '';
+        let parsedTransactions = [];
+        
+        // Setup drag and drop
+        const uploadSection = document.getElementById('uploadSection');
+        
+        uploadSection.addEventListener('dragover', (e) => {
             e.preventDefault();
-            e.currentTarget.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
             e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
+            uploadSection.classList.remove('dragover');
+            
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                processPDF(files[0]);
+                handleFile(files[0]);
             }
-        }
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) {
-                processPDF(file);
+        });
+        
+        // File input handler
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
             }
-        }
-
-        async function processPDF(file) {
+        });
+        
+        async function handleFile(file) {
             if (file.type !== 'application/pdf') {
-                showError('Please upload a PDF file.');
+                showStatus('Please upload a PDF file', 'error');
                 return;
             }
-
-            showProcessing(true);
-            hideMessages();
-
+            
             try {
-                // Load PDF.js library if not already loaded
-                if (typeof pdfjsLib === 'undefined') {
-                    await loadPDFJS();
-                }
-
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                fileContent = await window.fs.readFile(file.name, { encoding: 'utf8' });
                 
-                let fullText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + '\n';
-                }
-
-                // Extract transactions and account info
-                const transactions = extractTransactionsFromText(fullText, file.name);
-                const accountInfo = extractAccountInfo(fullText);
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileInfo').classList.add('show');
+                document.getElementById('processBtn').disabled = false;
                 
-                if (transactions.length > 0) {
-                    currentTransactions = transactions;
-                    showSuccess(`Successfully processed ${transactions.length} transactions from ${file.name}`);
-                    
-                    // Update account info if found
-                    updateAccountInfo(accountInfo);
-                    
-                    displayResults();
-                } else {
-                    showError('No transactions found in the PDF. Please check if this is a valid bank statement.');
-                }
-
+                showStatus('File loaded successfully! Click "Process Statement" to parse transactions.', 'success');
             } catch (error) {
-                console.error('PDF processing error:', error);
-                showError('Failed to process PDF. Please try again or check the file format.');
-            } finally {
-                showProcessing(false);
+                showStatus('Error reading file: ' + error.message, 'error');
             }
         }
-
-        async function loadPDFJS() {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-                script.onload = () => {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                    resolve();
-                };
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
-
-        function extractAccountInfo(text) {
-            const info = {};
-            
-            // Extract account number
-            const accountMatch = text.match(/ACCOUNT\s*NUMBER\s*:?\s*(\d+)/i) || 
-                                text.match(/NOMBOR\s*AKAUN\s*:?\s*(\d+)/i);
-            if (accountMatch) info.accountNumber = accountMatch[1];
-            
-            // Extract statement date
-            const dateMatch = text.match(/STATEMENT\s*DATE\s*:?\s*(\d{2}\/\d{2}\/\d{2})/i) ||
-                             text.match(/TARIKH\s*PENYATA\s*:?\s*(\d{2}\/\d{2}\/\d{2})/i);
-            if (dateMatch) info.statementDate = dateMatch[1];
-            
-            // Extract account type
-            if (text.includes('CURRENT ACCOUNT')) info.accountType = 'Current Account-I';
-            else if (text.includes('SAVINGS')) info.accountType = 'Savings Account';
-            
-            // Extract branch
-            const branchMatch = text.match(/IBS\s+([A-Z\s]+)/);
-            if (branchMatch) info.branch = branchMatch[1].trim();
-            
-            return info;
-        }
-
-        function updateAccountInfo(info) {
-            if (Object.keys(info).length > 0) {
-                document.getElementById('accountInfo').style.display = 'block';
-                
-                if (info.accountNumber) document.getElementById('accountNumber').textContent = info.accountNumber;
-                if (info.statementDate) document.getElementById('statementDate').textContent = info.statementDate;
-                if (info.accountType) document.getElementById('accountType').textContent = info.accountType;
-                if (info.branch) document.getElementById('branch').textContent = info.branch;
-            }
-        }
-
-        function extractTransactionsFromText(text, filename) {
+        
+        function parseTransactions(text) {
+            const lines = text.split('\n');
             const transactions = [];
+            let currentTransaction = null;
+            let captureDescription = false;
+            let isInTransactionBlock = false;
             
-            // Look for beginning balance
-            let beginningBalance = '';
-            const balancePatterns = [
-                /BEGINNING BALANCE\s+([\d,]+\.?\d*)/i,
-                /BALANCE\s+B\/F\s+([\d,]+\.?\d*)/i,
-                /OPENING BALANCE\s+([\d,]+\.?\d*)/i
-            ];
-            
-            for (const pattern of balancePatterns) {
-                const match = text.match(pattern);
-                if (match) {
-                    beginningBalance = match[1];
-                    transactions.push({
-                        date: "Beginning",
-                        description: "BEGINNING BALANCE",
-                        amount: "",
-                        balance: beginningBalance,
-                        type: "Balance"
-                    });
-                    break;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmedLine = line.trim();
+                
+                // Skip empty lines and headers
+                if (!trimmedLine || 
+                    trimmedLine.includes('TARIKH MASUK') || 
+                    trimmedLine.includes('ENTRY DATE') || 
+                    trimmedLine.includes('MUKA/') || 
+                    trimmedLine.includes('PAGE') ||
+                    trimmedLine.includes('Maybank Islamic') ||
+                    trimmedLine.includes('PROTECTED BY PIDM') ||
+                    trimmedLine.includes('BAKI LEGAR') ||
+                    trimmedLine.includes('LEDGER BALANCE') ||
+                    trimmedLine.includes('Perhatian / Note') ||
+                    trimmedLine.includes('All items and balances') ||
+                    trimmedLine.includes('Please notify')) {
+                    continue;
                 }
-            }
-
-            // Method 1: Try the original working regex patterns first
-            const regexPatterns = [
-                /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)/g,
-                /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/g
-            ];
-
-            let regexTransactions = [];
-            let maxMatches = 0;
-            
-            for (let pattern of regexPatterns) {
-                const matches = [...text.matchAll(pattern)];
-                if (matches.length > maxMatches) {
-                    maxMatches = matches.length;
-                    regexTransactions = matches.map(match => {
-                        const [, date, description, amount, balance] = match;
-                        
-                        // Clean description
-                        const cleanDesc = description.trim().replace(/\s+/g, ' ');
-                        
-                        // Skip invalid entries
-                        if (cleanDesc.length < 3 || /^\d+$/.test(cleanDesc) || cleanDesc.includes('BALANCE')) {
-                            return null;
-                        }
-                        
-                        // Determine transaction type
-                        let type = 'Credit';
-                        let amountValue = amount.replace(/[+-]/g, '');
-                        
-                        if (amount.includes('-') ||
-                            cleanDesc.toLowerCase().includes('debit') || 
-                            cleanDesc.toLowerCase().includes('withdrawal') ||
-                            cleanDesc.toLowerCase().includes('fee') ||
-                            cleanDesc.toLowerCase().includes('charge') ||
-                            cleanDesc.toLowerCase().includes('transfer fr') ||
-                            cleanDesc.toLowerCase().includes('chq')) {
-                            type = 'Debit';
-                            amountValue = '-' + amountValue;
-                        }
-                        
-                        return {
-                            date: date,
-                            description: cleanDesc,
-                            amount: amountValue,
-                            balance: balance,
-                            type: type
-                        };
-                    }).filter(t => t !== null);
+                
+                // Detect beginning/ending balance
+                if (trimmedLine.includes('BEGINNING BALANCE') || trimmedLine.includes('ENDING BALANCE')) {
+                    isInTransactionBlock = trimmedLine.includes('BEGINNING BALANCE');
+                    continue;
                 }
-            }
-
-            // Method 2: If regex found good results, enhance descriptions with multi-line approach
-            if (regexTransactions.length > 10) {
-                // Use regex results as base and enhance descriptions
-                const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
                 
-                regexTransactions.forEach(transaction => {
-                    // Find the line with this transaction's date
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
-                        if (line.startsWith(transaction.date)) {
-                            // Look at next few lines for additional description
-                            let enhancedDesc = transaction.description;
-                            for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-                                const nextLine = lines[j];
-                                
-                                // Stop if we hit another date or amount/balance pattern
-                                if (nextLine.match(/^\d{2}\/\d{2}/) || 
-                                    nextLine.match(/^[\d,]+\.?\d*[+-]?\s+[\d,]+\.?\d*$/)) {
-                                    break;
-                                }
-                                
-                                // Add meaningful description lines
-                                if (nextLine && 
-                                    !nextLine.match(/^[A-Z\s]+$/) && 
-                                    nextLine.length > 2 &&
-                                    !nextLine.includes('ENTRY DATE') &&
-                                    !nextLine.includes('PAGE')) {
-                                    enhancedDesc += ' - ' + nextLine;
-                                }
-                            }
-                            
-                            transaction.description = enhancedDesc
-                                .replace(/\s+/g, ' ')
-                                .replace(/\s*-\s*-\s*/g, ' - ')
-                                .trim();
-                            break;
-                        }
-                    }
-                });
+                // Check for date pattern (DD/MM format) at the start of line
+                const dateMatch = trimmedLine.match(/^(\d{2}\/\d{2})\s+/);
                 
-                transactions.push(...regexTransactions);
-            } else {
-                // Method 3: Fall back to line-by-line parsing if regex fails
-                const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-                
-                let currentTransaction = null;
-                let collectingDescription = false;
-                
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    
-                    // Skip header lines and irrelevant content
-                    if (line.includes('ENTRY DATE') || 
-                        line.includes('TRANSACTION DESCRIPTION') ||
-                        line.includes('PAGE') ||
-                        line.includes('Maybank Islamic') ||
-                        line.includes('PROTECTED BY PIDM') ||
-                        line.length < 5) {
-                        continue;
+                if (dateMatch) {
+                    // Save previous transaction if exists
+                    if (currentTransaction && currentTransaction.date) {
+                        // Clean up description
+                        currentTransaction.description = currentTransaction.description
+                            .filter(d => d && d.trim())
+                            .join(' | ');
+                        transactions.push(currentTransaction);
                     }
                     
-                    // Look for transaction date pattern (DD/MM)
-                    const dateMatch = line.match(/^(\d{2}\/\d{2})\s+(.+)/);
+                    // Start new transaction
+                    currentTransaction = {
+                        date: dateMatch[1],
+                        description: [],
+                        amount: null,
+                        balance: null
+                    };
                     
-                    if (dateMatch) {
-                        // Save previous transaction if exists
-                        if (currentTransaction && currentTransaction.amount) {
-                            transactions.push(currentTransaction);
+                    // Parse the rest of the line
+                    const restOfLine = trimmedLine.substring(dateMatch[0].length);
+                    
+                    // Look for amount and balance pattern (e.g., "5,098.00- 121,624.61")
+                    const amountBalanceMatch = restOfLine.match(/([\d,]+\.\d{2})([+-])\s+([\d,]+\.\d{2})\s*$/);
+                    const amountBalanceMatch2 = restOfLine.match(/([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s*$/);
+                    
+                    if (amountBalanceMatch) {
+                        currentTransaction.amount = amountBalanceMatch[1] + amountBalanceMatch[2];
+                        currentTransaction.balance = amountBalanceMatch[3];
+                        
+                        // Extract description (everything before the amount)
+                        const descPart = restOfLine.substring(0, restOfLine.indexOf(amountBalanceMatch[0])).trim();
+                        if (descPart) {
+                            currentTransaction.description.push(descPart);
                         }
-                        
-                        const [, date, restOfLine] = dateMatch;
-                        
-                        // Try to extract amount and balance from the same line
-                        const amountBalanceMatch = restOfLine.match(/(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)$/);
-                        
-                        if (amountBalanceMatch) {
-                            // Found complete transaction in one line
-                            const [, desc, amt, bal] = amountBalanceMatch;
-                            const description = desc.trim();
-                            
-                            let type = 'Credit';
-                            let amountValue = amt;
-                            
-                            if (description.toLowerCase().includes('debit') || 
-                                description.toLowerCase().includes('withdrawal') ||
-                                description.toLowerCase().includes('fee') ||
-                                description.toLowerCase().includes('charge') ||
-                                description.toLowerCase().includes('transfer fr') ||
-                                description.toLowerCase().includes('chq') ||
-                                restOfLine.includes('-')) {
-                                type = 'Debit';
-                                amountValue = '-' + amt;
-                            }
-                            
-                            currentTransaction = {
-                                date: date,
-                                description: description,
-                                amount: amountValue,
-                                balance: bal,
-                                type: type
-                            };
-                            collectingDescription = false;
-                        } else {
-                            // Transaction spans multiple lines
-                            currentTransaction = {
-                                date: date,
-                                description: restOfLine,
-                                amount: '',
-                                balance: '',
-                                type: 'Credit'
-                            };
-                            collectingDescription = true;
+                    } else if (amountBalanceMatch2) {
+                        // Check if there's a + or - indicator in the previous text
+                        const descPart = restOfLine.substring(0, restOfLine.indexOf(amountBalanceMatch2[0])).trim();
+                        if (descPart) {
+                            currentTransaction.description.push(descPart);
                         }
-                    } else if (collectingDescription && currentTransaction) {
-                        // Check if this line contains amount and balance
-                        const amountBalanceMatch = line.match(/^(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)$/);
-                        
-                        if (amountBalanceMatch) {
-                            const [, extraDesc, amount, balance] = amountBalanceMatch;
-                            
-                            if (extraDesc.trim()) {
-                                currentTransaction.description += ' - ' + extraDesc.trim();
-                            }
-                            
-                            currentTransaction.amount = amount;
-                            currentTransaction.balance = balance;
-                            
-                            if (currentTransaction.description.toLowerCase().includes('debit') || 
-                                currentTransaction.description.toLowerCase().includes('withdrawal') ||
-                                currentTransaction.description.toLowerCase().includes('fee') ||
-                                currentTransaction.description.toLowerCase().includes('charge') ||
-                                currentTransaction.description.toLowerCase().includes('transfer fr') ||
-                                currentTransaction.description.toLowerCase().includes('chq') ||
-                                line.includes('-')) {
-                                currentTransaction.type = 'Debit';
-                                currentTransaction.amount = '-' + amount;
-                            }
-                            
-                            collectingDescription = false;
-                        } else if (line.match(/^[\d,]+\.?\d*[+-]?\s+[\d,]+\.?\d*$/)) {
-                            // Line contains only amount and balance
-                            const parts = line.split(/\s+/);
-                            if (parts.length === 2) {
-                                currentTransaction.amount = parts[0];
-                                currentTransaction.balance = parts[1];
-                                
-                                if (currentTransaction.description.toLowerCase().includes('debit') || 
-                                    currentTransaction.description.toLowerCase().includes('withdrawal') ||
-                                    currentTransaction.description.toLowerCase().includes('fee') ||
-                                    currentTransaction.description.toLowerCase().includes('charge') ||
-                                    currentTransaction.description.toLowerCase().includes('transfer fr') ||
-                                    currentTransaction.description.toLowerCase().includes('chq') ||
-                                    parts[0].includes('-')) {
-                                    currentTransaction.type = 'Debit';
-                                    currentTransaction.amount = '-' + parts[0].replace('-', '');
-                                }
-                                
-                                collectingDescription = false;
-                            }
-                        } else {
-                            // Continue collecting description
-                            if (line && !line.match(/^[A-Z\s]+$/) && line.length > 2) {
-                                currentTransaction.description += ' - ' + line;
-                            }
+                        currentTransaction.amount = amountBalanceMatch2[1] + '+'; // Default to credit
+                        currentTransaction.balance = amountBalanceMatch2[2];
+                    } else {
+                        // No amount/balance found on this line, just description
+                        if (restOfLine.trim() && !restOfLine.match(/^[\d,]+\.\d{2}/)) {
+                            currentTransaction.description.push(restOfLine.trim());
+                        }
+                    }
+                    
+                    captureDescription = true;
+                } 
+                // Continue capturing multi-line descriptions
+                else if (currentTransaction && captureDescription && trimmedLine) {
+                    // Check if this line contains just amount and balance
+                    const standaloneAmountBalance = trimmedLine.match(/^([\d,]+\.\d{2})([+-])\s+([\d,]+\.\d{2})$/);
+                    const standaloneAmountBalance2 = trimmedLine.match(/^([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/);
+                    
+                    if (standaloneAmountBalance) {
+                        currentTransaction.amount = standaloneAmountBalance[1] + standaloneAmountBalance[2];
+                        currentTransaction.balance = standaloneAmountBalance[3];
+                        captureDescription = false;
+                    } else if (standaloneAmountBalance2) {
+                        currentTransaction.amount = standaloneAmountBalance2[1] + '+';
+                        currentTransaction.balance = standaloneAmountBalance2[2];
+                        captureDescription = false;
+                    } else if (trimmedLine.match(/^[\d,]+\.\d{2}[+-]?$/)) {
+                        // Just amount
+                        currentTransaction.amount = trimmedLine;
+                        captureDescription = false;
+                    } else if (!trimmedLine.match(/^[\d,]+\.\d{2}/) && 
+                               !trimmedLine.includes('TOTAL DEBIT') && 
+                               !trimmedLine.includes('TOTAL CREDIT') &&
+                               !trimmedLine.includes('FCN') &&
+                               !trimmedLine.includes('Wang yang keluar')) {
+                        // Add to description
+                        // Skip lines that are obviously not part of transaction description
+                        if (trimmedLine.length > 1 && !trimmedLine.match(/^\*+$/)) {
+                            currentTransaction.description.push(trimmedLine);
                         }
                     }
                 }
-                
-                // Add the last transaction
-                if (currentTransaction && currentTransaction.amount) {
-                    transactions.push(currentTransaction);
-                }
             }
-
-            // Remove duplicates
-            const unique = transactions.filter((trans, index, self) => 
-                index === self.findIndex(t => 
-                    t.date === trans.date && 
-                    t.amount === trans.amount && 
-                    t.balance === trans.balance
-                )
-            );
-
-            return unique;
+            
+            // Add last transaction
+            if (currentTransaction && currentTransaction.date) {
+                currentTransaction.description = currentTransaction.description
+                    .filter(d => d && d.trim())
+                    .join(' | ');
+                transactions.push(currentTransaction);
+            }
+            
+            return transactions;
         }
-
-        function displayResults() {
-            calculateSummary();
-            populateTable();
-            document.getElementById('resultsSection').style.display = 'block';
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        
+        function processStatement() {
+            if (!fileContent) {
+                showStatus('Please upload a file first', 'error');
+                return;
+            }
+            
+            showStatus('Processing statement...', 'info');
+            
+            try {
+                parsedTransactions = parseTransactions(fileContent);
+                
+                if (parsedTransactions.length === 0) {
+                    showStatus('No transactions found in the statement', 'error');
+                    return;
+                }
+                
+                displayResults(parsedTransactions);
+                showStatus(`Successfully parsed ${parsedTransactions.length} transactions!`, 'success');
+            } catch (error) {
+                showStatus('Error processing statement: ' + error.message, 'error');
+                console.error(error);
+            }
         }
-
-        function calculateSummary() {
-            if (currentTransactions.length === 0) return;
+        
+        function processFromText() {
+            const text = prompt('Paste your bank statement text here:');
+            if (!text) return;
             
-            const beginBalance = currentTransactions[0].balance || '0';
-            const endBalance = currentTransactions[currentTransactions.length - 1].balance || '0';
+            fileContent = text;
             
+            try {
+                parsedTransactions = parseTransactions(text);
+                
+                if (parsedTransactions.length === 0) {
+                    showStatus('No transactions found in the text', 'error');
+                    return;
+                }
+                
+                displayResults(parsedTransactions);
+                showStatus(`Successfully parsed ${parsedTransactions.length} transactions!`, 'success');
+            } catch (error) {
+                showStatus('Error processing text: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        function displayResults(transactions) {
+            // Calculate summary
             let totalCredits = 0;
             let totalDebits = 0;
+            let finalBalance = 0;
             
-            currentTransactions.forEach(t => {
-                if (t.type === 'Credit' && t.amount) {
-                    totalCredits += parseFloat(t.amount.replace(/[,]/g, ''));
-                } else if (t.type === 'Debit' && t.amount) {
-                    totalDebits += parseFloat(t.amount.replace(/[,-]/g, ''));
+            transactions.forEach(t => {
+                const amount = parseFloat(t.amount?.replace(/[,+\-]/g, '') || 0);
+                if (t.amount?.includes('+')) {
+                    totalCredits += amount;
+                } else if (t.amount?.includes('-')) {
+                    totalDebits += amount;
+                }
+                
+                if (t.balance) {
+                    finalBalance = parseFloat(t.balance.replace(/,/g, ''));
                 }
             });
             
-            const netChange = totalCredits - totalDebits;
-            const netChangeStr = netChange >= 0 ? `+${netChange.toLocaleString()}` : netChange.toLocaleString();
+            // Update summary cards
+            document.getElementById('totalTransactions').textContent = transactions.length;
+            document.getElementById('totalCredits').textContent = `RM ${totalCredits.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('totalDebits').textContent = `RM ${totalDebits.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('finalBalance').textContent = `RM ${finalBalance.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             
-            updateSummary(
-                beginBalance,
-                endBalance,
-                totalCredits.toLocaleString(),
-                totalDebits.toLocaleString(),
-                netChangeStr
-            );
-        }
-
-        function updateSummary(begin, end, credits, debits, net) {
-            document.getElementById('beginBalance').textContent = begin;
-            document.getElementById('endBalance').textContent = end;
-            document.getElementById('totalCredits').textContent = credits;
-            document.getElementById('totalDebits').textContent = debits;
-            document.getElementById('netChange').textContent = net;
-            document.getElementById('transactionCount').textContent = currentTransactions.length;
-            
-            // Update net change color
-            const netElement = document.getElementById('netChange');
-            if (net.includes('+')) {
-                netElement.className = 'summary-value credit';
-            } else if (net.includes('-')) {
-                netElement.className = 'summary-value debit';
-            } else {
-                netElement.className = 'summary-value';
-            }
-        }
-
-        function populateTable() {
-            const tbody = document.getElementById('transactionBody');
+            // Populate table
+            const tbody = document.getElementById('transactionTableBody');
             tbody.innerHTML = '';
             
-            currentTransactions.forEach(transaction => {
-                const row = tbody.insertRow();
+            transactions.forEach(t => {
+                const row = document.createElement('tr');
+                
+                const isCredit = t.amount?.includes('+');
+                const isDebit = t.amount?.includes('-');
+                
                 row.innerHTML = `
-                    <td>${transaction.date}</td>
-                    <td>${transaction.description}</td>
-                    <td class="amount">${transaction.amount || '-'}</td>
-                    <td class="balance">${transaction.balance}</td>
-                    <td><span class="type-badge type-${transaction.type.toLowerCase()}">${transaction.type}</span></td>
+                    <td>${t.date || ''}</td>
+                    <td class="description">${t.description || ''}</td>
+                    <td class="amount ${isCredit ? 'credit' : isDebit ? 'debit' : ''}">${t.amount || ''}</td>
+                    <td class="balance">${t.balance || ''}</td>
                 `;
+                
+                tbody.appendChild(row);
             });
-        }
-
-        function downloadCSV() {
-            if (currentTransactions.length === 0) {
-                showError('No transactions to download. Please upload a PDF first.');
-                return;
-            }
-
-            const headers = ['Date', 'Description', 'Amount', 'Balance', 'Type'];
-            const csvContent = [
-                headers.join(','),
-                ...currentTransactions.map(t => [
-                    `"${t.date}"`,
-                    `"${t.description.replace(/"/g, '""')}"`,
-                    `"${t.amount || ''}"`,
-                    `"${t.balance}"`,
-                    `"${t.type}"`
-                ].join(','))
-            ].join('\n');
             
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'bank_statement_converted.csv';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            // Show results section
+            document.getElementById('resultsSection').classList.add('show');
         }
-
-        function copyToClipboard() {
-            if (currentTransactions.length === 0) {
-                showError('No transactions to copy. Please upload a PDF first.');
-                return;
-            }
-
-            const headers = ['Date', 'Description', 'Amount', 'Balance', 'Type'];
-            const tabDelimited = [
-                headers.join('\t'),
-                ...currentTransactions.map(t => [
-                    t.date,
-                    t.description,
-                    t.amount || '',
-                    t.balance,
-                    t.type
-                ].join('\t'))
-            ].join('\n');
+        
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
             
-            navigator.clipboard.writeText(tabDelimited).then(() => {
-                showSuccess('Copied to clipboard! You can now paste this into Excel.');
-                setTimeout(hideMessages, 3000);
-            }).catch(() => {
-                showError('Failed to copy. Please try downloading the CSV instead.');
-            });
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusEl.classList.remove('show');
+                }, 5000);
+            }
         }
-
-        function showProcessing(show) {
-            document.getElementById('processing').style.display = show ? 'block' : 'none';
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
-
-        function hideMessages() {
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
-        }
-    </script>
-</body>
-</html>
+        
+        function exportToCSV() {
+            if (parse

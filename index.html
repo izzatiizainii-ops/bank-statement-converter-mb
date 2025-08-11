@@ -384,24 +384,28 @@
                 <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">📊 Statement Summary</h3>
                 <div class="summary-grid">
                     <div class="summary-item">
+                        <h3>Total Transactions</h3>
+                        <div class="summary-value" id="totalTransactions">0</div>
+                    </div>
+                    <div class="summary-item">
                         <h3>Beginning Balance</h3>
-                        <div class="summary-value" id="beginBalance">RM 0</div>
+                        <div class="summary-value" id="beginBalance">116,320.41</div>
                     </div>
                     <div class="summary-item">
                         <h3>Ending Balance</h3>
-                        <div class="summary-value" id="endBalance">RM 0</div>
+                        <div class="summary-value" id="endBalance">119,379.41</div>
                     </div>
                     <div class="summary-item">
                         <h3>Total Credits</h3>
-                        <div class="summary-value credit" id="totalCredits">RM 0</div>
+                        <div class="summary-value credit" id="totalCredits">12,940.00</div>
                     </div>
                     <div class="summary-item">
                         <h3>Total Debits</h3>
-                        <div class="summary-value debit" id="totalDebits">RM 0</div>
+                        <div class="summary-value debit" id="totalDebits">9,751.00</div>
                     </div>
                     <div class="summary-item">
                         <h3>Net Change</h3>
-                        <div class="summary-value" id="netChange">RM 0</div>
+                        <div class="summary-value credit" id="netChange">+3189.00</div>
                     </div>
                 </div>
             </div>
@@ -694,7 +698,7 @@
             });
             
             const netChange = totalCredits - totalDebits;
-            const netChangeStr = netChange >= 0 ? `+RM ${netChange.toLocaleString()}` : `RM ${netChange.toLocaleString()}`;
+            const netChangeStr = netChange >= 0 ? `+${netChange.toLocaleString()}` : netChange.toLocaleString();
             
             updateSummary(
                 beginBalance,
@@ -706,10 +710,11 @@
         }
 
         function updateSummary(begin, end, credits, debits, net) {
-            document.getElementById('beginBalance').textContent = `RM ${begin}`;
-            document.getElementById('endBalance').textContent = `RM ${end}`;
-            document.getElementById('totalCredits').textContent = `RM ${credits}`;
-            document.getElementById('totalDebits').textContent = `RM ${debits}`;
+            document.getElementById('totalTransactions').textContent = currentTransactions.length;
+            document.getElementById('beginBalance').textContent = begin;
+            document.getElementById('endBalance').textContent = end;
+            document.getElementById('totalCredits').textContent = credits;
+            document.getElementById('totalDebits').textContent = debits;
             document.getElementById('netChange').textContent = net;
             document.getElementById('transactionCount').textContent = currentTransactions.length;
             

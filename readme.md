@@ -9,7 +9,7 @@ A free, privacy-focused web tool to convert bank statement PDFs to Excel format.
 - 🌍 No signup required
 
 ## Usage
-1. Visit the live site: https://yourusername.github.io/bank-statement-converter
+1. Visit the live site: https://izzatiizainii-ops.github.io/bank-statement-converter-mb/
 2. Upload your bank statement PDF
 3. Download the converted Excel file
 

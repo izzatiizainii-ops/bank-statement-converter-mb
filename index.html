@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Statement to Excel Converter</title>
+    <title>Bank Statement to Excel Converter - Debug Mode</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
         
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -125,6 +125,53 @@
             100% { transform: rotate(360deg); }
         }
         
+        .debug-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .debug-content {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .extracted-text {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .extracted-text h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .text-sample {
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8em;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+        }
+        
         .results {
             padding: 40px;
             display: none;
@@ -187,6 +234,14 @@
             background: #229954;
         }
         
+        .btn.warning {
+            background: #f39c12;
+        }
+        
+        .btn.warning:hover {
+            background: #e67e22;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
@@ -223,17 +278,6 @@
             font-weight: bold;
         }
         
-        .debug {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.9em;
-            display: none;
-        }
-        
         @media (max-width: 768px) {
             .upload-box {
                 padding: 40px 20px;
@@ -254,8 +298,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏦 Bank Statement Converter</h1>
-            <p>Convert PDF bank statements to Excel format</p>
+            <h1>🏦 Bank Statement Converter - Debug Mode</h1>
+            <p>Convert PDF bank statements to Excel format with detailed debugging</p>
         </div>
         
         <div class="upload-section">
@@ -268,11 +312,19 @@
             </div>
             
             <div id="status" class="status"></div>
-            <div id="debug" class="debug"></div>
             
-            <button onclick="testMode()" style="background: #f39c12; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                Test with Sample Data
-            </button>
+            <button class="btn warning" onclick="testMode()">Test with Sample Data</button>
+            <button class="btn" onclick="toggleDebug()">Toggle Debug Info</button>
+        </div>
+        
+        <div id="debugSection" class="debug-section">
+            <h3>🔧 Debug Information</h3>
+            <div id="debugContent" class="debug-content">Debug info will appear here...</div>
+        </div>
+        
+        <div id="extractedText" class="extracted-text">
+            <h3>📄 Extracted Text from PDF (First 2000 characters)</h3>
+            <div id="textSample" class="text-sample"></div>
         </div>
         
         <div id="results" class="results">
@@ -298,6 +350,7 @@
             <div class="controls">
                 <button class="btn" onclick="downloadCSV()">📊 Download CSV</button>
                 <button class="btn success" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                <button class="btn warning" onclick="downloadRawText()">📝 Download Raw Text</button>
             </div>
             
             <table>
@@ -318,13 +371,24 @@
     <script>
         let transactions = [];
         let debugMode = false;
+        let extractedText = '';
 
-        function log(message) {
-            console.log(message);
+        function debug(message) {
+            console.log(`[DEBUG] ${message}`);
             if (debugMode) {
-                const debug = document.getElementById('debug');
-                debug.style.display = 'block';
-                debug.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+                const debugContent = document.getElementById('debugContent');
+                debugContent.textContent += `${new Date().toLocaleTimeString()}: ${message}\n`;
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+        }
+
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const debugSection = document.getElementById('debugSection');
+            debugSection.style.display = debugMode ? 'block' : 'none';
+            
+            if (debugMode) {
+                debug('Debug mode enabled');
             }
         }
 
@@ -339,7 +403,7 @@
                 status.innerHTML = message;
             }
             
-            log(`Status: ${type} - ${message}`);
+            debug(`Status: ${type} - ${message}`);
         }
 
         function hideStatus() {
@@ -374,7 +438,7 @@
         }
 
         async function processFile(file) {
-            log(`Processing file: ${file.name} (${file.type})`);
+            debug(`Processing file: ${file.name} (${file.type}, ${(file.size/1024/1024).toFixed(2)}MB)`);
             
             if (file.type !== 'application/pdf') {
                 showStatus('Please select a PDF file.', 'error');
@@ -390,42 +454,47 @@
                 
                 // Convert file to array buffer
                 const arrayBuffer = await file.arrayBuffer();
-                log(`File size: ${arrayBuffer.byteLength} bytes`);
+                debug(`File size: ${arrayBuffer.byteLength} bytes`);
                 
                 // Load PDF
                 const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                log(`PDF loaded. Pages: ${pdf.numPages}`);
+                debug(`PDF loaded. Pages: ${pdf.numPages}`);
                 
                 showStatus(`Extracting text from ${pdf.numPages} pages...`);
                 
                 // Extract text from all pages
-                let fullText = '';
+                extractedText = '';
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
                     const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + '\n';
-                    log(`Page ${i}: ${pageText.length} characters`);
+                    extractedText += `=== PAGE ${i} ===\n${pageText}\n\n`;
+                    debug(`Page ${i}: ${pageText.length} characters`);
                 }
                 
-                log(`Total text extracted: ${fullText.length} characters`);
+                debug(`Total text extracted: ${extractedText.length} characters`);
+                
+                // Show extracted text sample
+                document.getElementById('textSample').textContent = extractedText.substring(0, 2000) + '...';
+                document.getElementById('extractedText').style.display = 'block';
+                
                 showStatus('Parsing transactions...');
                 
-                // Parse transactions
-                transactions = parseTransactions(fullText);
-                log(`Found ${transactions.length} transactions`);
+                // Parse transactions with multiple patterns
+                transactions = parseTransactions(extractedText);
+                debug(`Found ${transactions.length} transactions`);
                 
                 if (transactions.length > 0) {
                     showStatus(`Successfully processed ${transactions.length} transactions!`, 'success');
                     displayResults();
                 } else {
-                    showStatus('No transactions found. This might not be a supported bank statement format.', 'error');
-                    debugMode = true;
-                    log('Sample text: ' + fullText.substring(0, 1000));
+                    showStatus('No transactions found. Check the debug info and raw text below.', 'error');
+                    toggleDebug(); // Auto-enable debug mode
                 }
                 
             } catch (error) {
-                log(`Error: ${error.message}`);
+                debug(`Error: ${error.message}`);
+                console.error('Full error:', error);
                 showStatus(`Error processing PDF: ${error.message}`, 'error');
             }
         }
@@ -441,7 +510,7 @@
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
                 script.onload = () => {
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                    log('PDF.js loaded successfully');
+                    debug('PDF.js loaded successfully');
                     resolve();
                 };
                 script.onerror = () => reject(new Error('Failed to load PDF.js'));
@@ -450,79 +519,132 @@
         }
 
         function parseTransactions(text) {
+            debug('Starting transaction parsing...');
             const transactions = [];
-            log('Starting transaction parsing...');
             
-            // Look for common transaction patterns
+            // Multiple parsing patterns to try
             const patterns = [
-                // DD/MM DESCRIPTION AMOUNT BALANCE
-                /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)/g,
-                // DD/MM/YY DESCRIPTION AMOUNT BALANCE  
-                /(\d{1,2}\/\d{1,2}\/\d{2})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)/g
+                // Maybank Islamic pattern: DD/MM DESCRIPTION AMOUNT BALANCE
+                {
+                    name: 'Maybank Pattern 1',
+                    regex: /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)/g
+                },
+                // Alternative pattern with more flexible spacing
+                {
+                    name: 'Maybank Pattern 2', 
+                    regex: /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/g
+                },
+                // Pattern for transactions with +/- indicators
+                {
+                    name: 'Pattern with +/-',
+                    regex: /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([+-]?[\d,]+\.?\d*)\s+([\d,]+\.?\d*)/g
+                },
+                // Pattern with date at start of line
+                {
+                    name: 'Line Start Pattern',
+                    regex: /^(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/gm
+                }
             ];
             
-            let matchCount = 0;
+            let bestPattern = null;
+            let maxMatches = 0;
             
+            // Try each pattern and use the one with most matches
             for (let pattern of patterns) {
-                let match;
-                while ((match = pattern.exec(text)) !== null) {
-                    const [, date, description, amount, balance] = match;
+                debug(`Trying ${pattern.name}...`);
+                const testMatches = [...text.matchAll(pattern.regex)];
+                debug(`${pattern.name} found ${testMatches.length} potential matches`);
+                
+                if (testMatches.length > maxMatches) {
+                    maxMatches = testMatches.length;
+                    bestPattern = pattern;
+                }
+            }
+            
+            if (bestPattern) {
+                debug(`Using ${bestPattern.name} with ${maxMatches} matches`);
+                
+                const matches = [...text.matchAll(bestPattern.regex)];
+                for (let match of matches) {
+                    const [fullMatch, date, description, amount, balance] = match;
                     
                     // Clean description
                     const cleanDesc = description.trim().replace(/\s+/g, ' ');
                     
                     // Skip invalid entries
-                    if (cleanDesc.length < 3 || /^\d+$/.test(cleanDesc)) continue;
+                    if (cleanDesc.length < 3 || /^\d+$/.test(cleanDesc) || cleanDesc.includes('BALANCE')) {
+                        debug(`Skipping invalid entry: ${cleanDesc}`);
+                        continue;
+                    }
                     
                     // Determine transaction type
                     let type = 'Credit';
-                    let amountValue = amount;
+                    let amountValue = amount.replace(/[+-]/g, '');
                     
-                    if (cleanDesc.toLowerCase().includes('debit') || 
+                    if (amount.includes('-') ||
+                        cleanDesc.toLowerCase().includes('debit') || 
                         cleanDesc.toLowerCase().includes('withdrawal') ||
                         cleanDesc.toLowerCase().includes('fee') ||
-                        cleanDesc.toLowerCase().includes('charge')) {
+                        cleanDesc.toLowerCase().includes('charge') ||
+                        cleanDesc.toLowerCase().includes('transfer fr') ||
+                        cleanDesc.toLowerCase().includes('chq')) {
                         type = 'Debit';
-                        amountValue = '-' + amount;
+                        amountValue = '-' + amountValue;
                     }
                     
-                    transactions.push({
+                    const transaction = {
                         date: date,
                         description: cleanDesc,
                         amount: amountValue,
                         balance: balance,
                         type: type
-                    });
+                    };
                     
-                    matchCount++;
+                    transactions.push(transaction);
+                    debug(`Added: ${date} | ${cleanDesc.substring(0, 30)}... | ${amountValue} | ${balance}`);
                 }
+            } else {
+                debug('No suitable pattern found');
                 
-                log(`Pattern found ${matchCount} matches`);
-                if (matchCount > 0) break; // Use first pattern that works
+                // Show some sample lines for manual inspection
+                const lines = text.split('\n').slice(0, 20);
+                debug('Sample lines from PDF:');
+                lines.forEach((line, index) => {
+                    if (line.trim()) {
+                        debug(`Line ${index}: ${line.trim()}`);
+                    }
+                });
             }
             
             // Remove duplicates
             const unique = transactions.filter((trans, index, self) => 
                 index === self.findIndex(t => 
-                    t.date === trans.date && t.amount === trans.amount && t.balance === trans.balance
+                    t.date === trans.date && 
+                    t.amount === trans.amount && 
+                    t.balance === trans.balance &&
+                    t.description === trans.description
                 )
             );
             
-            log(`After deduplication: ${unique.length} transactions`);
+            debug(`After deduplication: ${unique.length} transactions`);
             return unique;
         }
 
         function displayResults() {
             // Calculate summary
             const totalCount = transactions.length;
-            const beginBalance = transactions.length > 0 ? transactions[0].balance : '0';
-            const endBalance = transactions.length > 0 ? transactions[transactions.length - 1].balance : '0';
+            let beginBalance = '0', endBalance = '0';
+            
+            if (transactions.length > 0) {
+                beginBalance = transactions[0].balance;
+                endBalance = transactions[transactions.length - 1].balance;
+            }
             
             let credits = 0, debits = 0;
             transactions.forEach(t => {
-                const amount = parseFloat(t.amount.replace(/[,\-]/g, ''));
-                if (t.type === 'Credit') credits += amount;
-                else debits += amount;
+                const amount = parseFloat(t.amount.replace(/[,]/g, ''));
+                if (amount >= 0) credits += amount;
+                else debits += Math.abs(amount);
             });
             
             const netChange = credits - debits;
@@ -577,6 +699,18 @@
             URL.revokeObjectURL(url);
         }
 
+        function downloadRawText() {
+            if (!extractedText) return;
+            
+            const blob = new Blob([extractedText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
         function copyToClipboard() {
             if (transactions.length === 0) return;
             
@@ -595,9 +729,9 @@
         function testMode() {
             // Sample data for testing
             transactions = [
-                { date: '01/01', description: 'Sample Credit Transaction', amount: '1000.00', balance: '5000.00', type: 'Credit' },
-                { date: '02/01', description: 'Sample Debit Transaction', amount: '-500.00', balance: '4500.00', type: 'Debit' },
-                { date: '03/01', description: 'Another Credit', amount: '250.00', balance: '4750.00', type: 'Credit' }
+                { date: '01/06', description: 'TRANSFER TO A/C - MAHANUM BINTI ADAM - FUND TRANSFER', amount: '520.00', balance: '119,132.61', type: 'Credit' },
+                { date: '05/06', description: 'INWARD CLEARING CHQ DEBIT 160227', amount: '-5,098.00', balance: '121,624.61', type: 'Debit' },
+                { date: '06/06', description: 'TRANSFER TO A/C - ABDUL RAHMAN BIN NO* - 151JUN25', amount: '130.00', balance: '108,914.41', type: 'Credit' }
             ];
             
             showStatus('Test data loaded!', 'success');

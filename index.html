@@ -593,76 +593,164 @@
                 }
             }
 
-            // Enhanced transaction patterns - using the working patterns from debug version
-            const patterns = [
-                // Maybank Islamic pattern: DD/MM DESCRIPTION AMOUNT BALANCE
-                /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)/g,
-                // Alternative pattern with more flexible spacing
-                /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/g,
-                // Pattern for transactions with +/- indicators
-                /(\d{1,2}\/\d{1,2})\s+(.+?)\s+([+-]?[\d,]+\.?\d*)\s+([\d,]+\.?\d*)/g,
-                // Pattern with date at start of line
-                /^(\d{1,2}\/\d{1,2})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/gm
-            ];
-
-            let bestPattern = null;
-            let maxMatches = 0;
+            // Split text into lines for better processing
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
             
-            // Try each pattern and use the one with most matches
-            for (let pattern of patterns) {
-                const testMatches = [...text.matchAll(pattern)];
+            let currentTransaction = null;
+            let collectingDescription = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
                 
-                if (testMatches.length > maxMatches) {
-                    maxMatches = testMatches.length;
-                    bestPattern = pattern;
+                // Skip header lines and irrelevant content
+                if (line.includes('ENTRY DATE') || 
+                    line.includes('TRANSACTION DESCRIPTION') ||
+                    line.includes('PAGE') ||
+                    line.includes('Maybank Islamic') ||
+                    line.includes('PROTECTED BY PIDM') ||
+                    line.length < 5) {
+                    continue;
+                }
+                
+                // Look for transaction date pattern (DD/MM)
+                const dateMatch = line.match(/^(\d{2}\/\d{2})\s+(.+)/);
+                
+                if (dateMatch) {
+                    // Save previous transaction if exists
+                    if (currentTransaction) {
+                        transactions.push(currentTransaction);
+                    }
+                    
+                    const [, date, restOfLine] = dateMatch;
+                    
+                    // Try to extract amount and balance from the same line or next lines
+                    let description = restOfLine;
+                    let amount = '';
+                    let balance = '';
+                    
+                    // Look for amount and balance in current line
+                    const amountBalanceMatch = restOfLine.match(/(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)$/);
+                    
+                    if (amountBalanceMatch) {
+                        // Found complete transaction in one line
+                        const [, desc, amt, bal] = amountBalanceMatch;
+                        description = desc.trim();
+                        amount = amt;
+                        balance = bal;
+                        
+                        // Determine transaction type
+                        let type = 'Credit';
+                        let amountValue = amount;
+                        
+                        if (description.toLowerCase().includes('debit') || 
+                            description.toLowerCase().includes('withdrawal') ||
+                            description.toLowerCase().includes('fee') ||
+                            description.toLowerCase().includes('charge') ||
+                            description.toLowerCase().includes('transfer fr') ||
+                            description.toLowerCase().includes('chq') ||
+                            restOfLine.includes('-')) {
+                            type = 'Debit';
+                            amountValue = '-' + amount;
+                        }
+                        
+                        currentTransaction = {
+                            date: date,
+                            description: description,
+                            amount: amountValue,
+                            balance: balance,
+                            type: type
+                        };
+                        collectingDescription = false;
+                    } else {
+                        // Transaction spans multiple lines
+                        currentTransaction = {
+                            date: date,
+                            description: restOfLine,
+                            amount: '',
+                            balance: '',
+                            type: 'Credit'
+                        };
+                        collectingDescription = true;
+                    }
+                } else if (collectingDescription && currentTransaction) {
+                    // Check if this line contains amount and balance
+                    const amountBalanceMatch = line.match(/^(.+?)\s+([\d,]+\.?\d*)[+-]?\s+([\d,]+\.?\d*)$/);
+                    
+                    if (amountBalanceMatch) {
+                        // Found amount and balance
+                        const [, extraDesc, amount, balance] = amountBalanceMatch;
+                        
+                        if (extraDesc.trim()) {
+                            currentTransaction.description += ' - ' + extraDesc.trim();
+                        }
+                        
+                        currentTransaction.amount = amount;
+                        currentTransaction.balance = balance;
+                        
+                        // Determine transaction type
+                        if (currentTransaction.description.toLowerCase().includes('debit') || 
+                            currentTransaction.description.toLowerCase().includes('withdrawal') ||
+                            currentTransaction.description.toLowerCase().includes('fee') ||
+                            currentTransaction.description.toLowerCase().includes('charge') ||
+                            currentTransaction.description.toLowerCase().includes('transfer fr') ||
+                            currentTransaction.description.toLowerCase().includes('chq') ||
+                            line.includes('-')) {
+                            currentTransaction.type = 'Debit';
+                            currentTransaction.amount = '-' + amount;
+                        } else {
+                            currentTransaction.amount = amount;
+                        }
+                        
+                        collectingDescription = false;
+                    } else if (line.match(/^[\d,]+\.?\d*[+-]?\s+[\d,]+\.?\d*$/)) {
+                        // Line contains only amount and balance
+                        const parts = line.split(/\s+/);
+                        if (parts.length === 2) {
+                            currentTransaction.amount = parts[0];
+                            currentTransaction.balance = parts[1];
+                            
+                            if (currentTransaction.description.toLowerCase().includes('debit') || 
+                                currentTransaction.description.toLowerCase().includes('withdrawal') ||
+                                currentTransaction.description.toLowerCase().includes('fee') ||
+                                currentTransaction.description.toLowerCase().includes('charge') ||
+                                currentTransaction.description.toLowerCase().includes('transfer fr') ||
+                                currentTransaction.description.toLowerCase().includes('chq') ||
+                                parts[0].includes('-')) {
+                                currentTransaction.type = 'Debit';
+                                currentTransaction.amount = '-' + parts[0].replace('-', '');
+                            }
+                            
+                            collectingDescription = false;
+                        }
+                    } else {
+                        // Continue collecting description
+                        if (line && !line.match(/^[A-Z\s]+$/) && line.length > 2) {
+                            currentTransaction.description += ' - ' + line;
+                        }
+                    }
                 }
             }
             
-            if (bestPattern) {
-                const matches = [...text.matchAll(bestPattern)];
-                for (let match of matches) {
-                    const [fullMatch, date, description, amount, balance] = match;
-                    
-                    // Clean description
-                    const cleanDesc = description.trim().replace(/\s+/g, ' ');
-                    
-                    // Skip invalid entries
-                    if (cleanDesc.length < 3 || /^\d+$/.test(cleanDesc) || cleanDesc.includes('BALANCE')) {
-                        continue;
-                    }
-                    
-                    // Determine transaction type
-                    let type = 'Credit';
-                    let amountValue = amount.replace(/[+-]/g, '');
-                    
-                    if (amount.includes('-') ||
-                        cleanDesc.toLowerCase().includes('debit') || 
-                        cleanDesc.toLowerCase().includes('withdrawal') ||
-                        cleanDesc.toLowerCase().includes('fee') ||
-                        cleanDesc.toLowerCase().includes('charge') ||
-                        cleanDesc.toLowerCase().includes('transfer fr') ||
-                        cleanDesc.toLowerCase().includes('chq')) {
-                        type = 'Debit';
-                        amountValue = '-' + amountValue;
-                    }
-                    
-                    transactions.push({
-                        date: date,
-                        description: cleanDesc,
-                        amount: amountValue,
-                        balance: balance,
-                        type: type
-                    });
-                }
+            // Add the last transaction
+            if (currentTransaction && currentTransaction.amount) {
+                transactions.push(currentTransaction);
             }
+
+            // Clean up descriptions and remove duplicates
+            const cleaned = transactions.map(t => ({
+                ...t,
+                description: t.description
+                    .replace(/\s+/g, ' ')
+                    .replace(/\s*-\s*-\s*/g, ' - ')
+                    .trim()
+            }));
 
             // Remove duplicates
-            const unique = transactions.filter((trans, index, self) => 
+            const unique = cleaned.filter((trans, index, self) => 
                 index === self.findIndex(t => 
                     t.date === trans.date && 
                     t.amount === trans.amount && 
-                    t.balance === trans.balance &&
-                    t.description === trans.description
+                    t.balance === trans.balance
                 )
             );
 
